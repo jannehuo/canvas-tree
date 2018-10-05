@@ -19255,7 +19255,28 @@ var define;
   }
 }.call(this));
 
-},{"buffer":"node_modules/buffer/index.js"}],"src/utils.js":[function(require,module,exports) {
+},{"buffer":"node_modules/buffer/index.js"}],"src/canvas.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.init = init;
+exports.context = exports.screen = void 0;
+var c = document.getElementById('canvas');
+var context = c.getContext('2d');
+exports.context = context;
+var screen = {
+  w: window.innerWidth,
+  h: window.innerHeight
+};
+exports.screen = screen;
+
+function init() {
+  c.width = screen.w;
+  c.height = screen.h;
+}
+},{}],"src/utils.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19303,12 +19324,19 @@ function getDirection(relativeToTarget, distance) {
     y: relativeToTarget.y / distance
   };
 }
-},{}],"src/main.js":[function(require,module,exports) {
+},{}],"src/Tree.js":[function(require,module,exports) {
 "use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
 
 var _lodash = _interopRequireDefault(require("lodash"));
 
 var _utils = require("./utils");
+
+var _canvas = require("./canvas");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -19318,31 +19346,13 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-var c = document.getElementById('canvas');
-var context = c.getContext('2d');
-var screen = {
-  w: window.innerWidth,
-  h: window.innerHeight
-};
-var mouseClick = {
-  x: false,
-  y: false
-};
-var mousePos = {
-  x: 0,
-  y: 0
-};
-c.width = screen.w;
-c.height = screen.h;
-var amount = 500;
-
 var Leaf =
 /*#__PURE__*/
 function () {
-  function Leaf(id, x, y) {
+  function Leaf(id, x, y, radius) {
     _classCallCheck(this, Leaf);
 
-    var points = (0, _utils.randomPointFromCircle)(screen.h / 8);
+    var points = (0, _utils.randomPointFromCircle)(radius);
     this.spreadValues = {
       x: x + points.x,
       y: y + points.y
@@ -19356,16 +19366,15 @@ function () {
     this.yVel = 0;
     this.colors = ["#2c7a47", "#1b4f2d", "#0f4722", "#095924"];
     this.color = _lodash.default.sample(this.colors);
-    this.radius = _lodash.default.random(2, 5);
+    this.size = _lodash.default.random(10, 15);
   }
 
   _createClass(Leaf, [{
     key: "draw",
     value: function draw() {
-      context.beginPath();
-      context.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
-      context.fillStyle = this.color;
-      context.fill();
+      _canvas.context.fillStyle = this.color;
+
+      _canvas.context.fillRect(this.x, this.y, this.size, this.size);
     }
   }, {
     key: "update",
@@ -19390,19 +19399,86 @@ function () {
 
       return force;
     }
+  }, {
+    key: "clear",
+    value: function clear() {
+      _canvas.context.clearRect(0, 0, _canvas.screen.w, _canvas.screen.h);
+    }
   }]);
 
   return Leaf;
 }();
 
+var Trunk =
+/*#__PURE__*/
+function () {
+  function Trunk(x, y) {
+    _classCallCheck(this, Trunk);
+
+    this.x = x;
+    this.y = y;
+    this.colors = ["#4f4223", "#635533", "#443a1f", "#564823"];
+    this.color = _lodash.default.sample(this.colors);
+    this.length = _lodash.default.random(150, 200);
+    this.width = _lodash.default.random(10, 20);
+    this.bottom = this.y + this.length;
+  }
+
+  _createClass(Trunk, [{
+    key: "draw",
+    value: function draw() {
+      _canvas.context.beginPath();
+
+      _canvas.context.moveTo(this.x, this.y);
+
+      _canvas.context.lineTo(this.x, this.bottom);
+
+      _canvas.context.lineWidth = this.width;
+      _canvas.context.strokeStyle = this.color;
+
+      _canvas.context.stroke();
+
+      this.top();
+    }
+  }, {
+    key: "top",
+    value: function top() {
+      _canvas.context.beginPath();
+
+      _canvas.context.moveTo(this.x, this.y);
+
+      _canvas.context.lineTo(this.x - 80, this.y - 80);
+
+      _canvas.context.moveTo(this.x, this.y);
+
+      _canvas.context.lineTo(this.x + 80, this.y - 80);
+
+      _canvas.context.lineWidth = this.width;
+      _canvas.context.strokeStyle = 'color';
+
+      _canvas.context.stroke();
+    }
+  }, {
+    key: "update",
+    value: function update() {
+      this.draw();
+    }
+  }]);
+
+  return Trunk;
+}();
+
 var Tree =
 /*#__PURE__*/
 function () {
-  function Tree(size) {
+  function Tree(size, radius) {
     _classCallCheck(this, Tree);
 
     this.size = size;
+    this.radius = radius;
     this.leaves = [];
+    this.trunk;
+    this.createTrunk();
     this.createLeaves();
   }
 
@@ -19412,12 +19488,18 @@ function () {
       var _this = this;
 
       _lodash.default.times(this.size, function (i) {
-        _this.leaves.push(new Leaf(i, screen.w / 2, screen.h / 2));
+        _this.leaves.push(new Leaf(i, _canvas.screen.w / 2, _canvas.screen.h / 2 - 100, _this.radius));
       });
+    }
+  }, {
+    key: "createTrunk",
+    value: function createTrunk() {
+      this.trunk = new Trunk(_canvas.screen.w / 2, _canvas.screen.h / 2);
     }
   }, {
     key: "draw",
     value: function draw() {
+      this.trunk.update();
       this.leaves.forEach(function (leaf) {
         return leaf.update();
       });
@@ -19427,35 +19509,200 @@ function () {
   return Tree;
 }();
 
-window.addEventListener('click', function (e) {}, true);
-window.addEventListener('mousemove', function (e) {}, true);
-window.addEventListener('touchmove', function (e) {
-  var touch = e.touches[0];
-}, true);
+var _default = Tree;
+exports.default = _default;
+},{"lodash":"node_modules/lodash/lodash.js","./utils":"src/utils.js","./canvas":"src/canvas.js"}],"src/Wind.js":[function(require,module,exports) {
+"use strict";
 
-var updateMousePos = function updateMousePos(x, y) {
-  mousePos = {
-    x: x,
-    y: y
-  };
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _canvas = require("./canvas");
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var Wind =
+/*#__PURE__*/
+function () {
+  function Wind() {
+    _classCallCheck(this, Wind);
+
+    this.lineColor = "#f2f2f2";
+    this.lineWidth = 10;
+    this.from = {
+      x: 0,
+      y: 0
+    };
+    this.to = {
+      x: 0,
+      y: 0
+    };
+    this.drawing = false;
+  }
+
+  _createClass(Wind, [{
+    key: "draw",
+    value: function draw() {
+      if (this.drawing) {
+        _canvas.context.beginPath();
+
+        _canvas.context.moveTo(this.from.x, this.from.y);
+
+        _canvas.context.lineTo(this.to.x, this.to.y);
+
+        _canvas.context.lineWidth = this.lineWidth;
+        _canvas.context.strokeStyle = this.lineColor;
+
+        _canvas.context.stroke();
+      }
+    }
+  }, {
+    key: "release",
+    value: function release() {
+      this.drawing = false;
+      this.from = {
+        x: 0,
+        y: 0
+      };
+      this.to = {
+        x: 0,
+        y: 0
+      };
+    }
+  }, {
+    key: "direction",
+    value: function direction() {}
+  }]);
+
+  return Wind;
+}();
+
+var _default = Wind;
+exports.default = _default;
+},{"./canvas":"src/canvas.js"}],"src/World.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _Tree = _interopRequireDefault(require("./Tree"));
+
+var _Wind = _interopRequireDefault(require("./Wind"));
+
+var _canvas = require("./canvas");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var treeSizes = {
+  large: 700,
+  medium: 500,
+  small: 300
 };
+var radiusSizes = {
+  large: 200,
+  medium: 150,
+  small: 100
+};
+var treeSize = {};
 
-var updateMouseClickPos = function updateMouseClickPos(x, y) {
-  mouseCLick = {
-    x: x,
-    y: y
+if (_canvas.screen.w > 1024) {
+  treeSize.radius = radiusSizes.large;
+  treeSize.size = treeSizes.large;
+} else if (_canvas.screen.w > 768 && _canvas.screen.w < 1024) {
+  treeSize.radius = radiusSizes.medium;
+  treeSize.size = treeSizes.medium;
+} else {
+  treeSize.radius = radiusSizes.small;
+  treeSize.size = treeSizes.small;
+}
+
+var World =
+/*#__PURE__*/
+function () {
+  function World() {
+    _classCallCheck(this, World);
+
+    this.create();
+    this.tree;
+    this.wind;
+  }
+
+  _createClass(World, [{
+    key: "create",
+    value: function create() {
+      this.tree = new _Tree.default(treeSize.size, treeSize.radius);
+      this.wind = new _Wind.default();
+    }
+  }, {
+    key: "update",
+    value: function update() {
+      this.tree.draw();
+      this.wind.draw();
+    }
+  }]);
+
+  return World;
+}();
+
+var _default = World;
+exports.default = _default;
+},{"./Tree":"src/Tree.js","./Wind":"src/Wind.js","./canvas":"src/canvas.js"}],"src/main.js":[function(require,module,exports) {
+"use strict";
+
+var _lodash = _interopRequireDefault(require("lodash"));
+
+var _canvas = require("./canvas");
+
+var _World = _interopRequireDefault(require("./World"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+(0, _canvas.init)();
+var world = new _World.default();
+window.addEventListener('mousedown', function (e) {
+  world.wind.from = {
+    x: e.clientX,
+    y: e.clientY
+  };
+  window.addEventListener('mousemove', inputMove, false);
+});
+window.addEventListener('mouseup', function (e) {
+  world.wind.release();
+  window.removeEventListener('mousemove', inputMove, false);
+});
+
+var inputMove = function inputMove(e) {
+  world.wind.drawing = true;
+  world.wind.to = {
+    x: e.clientX,
+    y: e.clientY
   };
 };
 
 var animate = function animate() {
   requestAnimationFrame(animate);
-  context.clearRect(0, 0, screen.w, screen.h);
-  tree.draw();
+
+  _canvas.context.clearRect(0, 0, _canvas.screen.w, _canvas.screen.h);
+
+  world.update();
 };
 
-var tree = new Tree(amount);
 animate();
-},{"lodash":"node_modules/lodash/lodash.js","./utils":"src/utils.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"lodash":"node_modules/lodash/lodash.js","./canvas":"src/canvas.js","./World":"src/World.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -19482,7 +19729,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62516" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58025" + '/');
 
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
