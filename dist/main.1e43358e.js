@@ -19521,6 +19521,8 @@ exports.default = void 0;
 
 var _canvas = require("./canvas");
 
+var _utils = require("./utils");
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -19544,6 +19546,9 @@ function () {
       y: 0
     };
     this.drawing = false;
+    this.windDirection;
+    this.windDistance;
+    this.windPower = 0;
   }
 
   _createClass(Wind, [{
@@ -19566,6 +19571,9 @@ function () {
     key: "release",
     value: function release() {
       this.drawing = false;
+      this.distance(this.from, this.to);
+      this.direction(this.from, this.to);
+      this.power();
       this.from = {
         x: 0,
         y: 0
@@ -19577,7 +19585,20 @@ function () {
     }
   }, {
     key: "direction",
-    value: function direction() {}
+    value: function direction(from, to) {
+      this.windDirection = (0, _utils.getDirection)((0, _utils.getRelativeTo)(from, to), this.windDistance);
+    }
+  }, {
+    key: "distance",
+    value: function distance(from, to) {
+      this.windDistance = (0, _utils.getDistance)((0, _utils.getRelativeTo)(from, to));
+    }
+  }, {
+    key: "power",
+    value: function power() {
+      console.log(this.windDirection);
+      console.log(this.windDistance);
+    }
   }]);
 
   return Wind;
@@ -19585,7 +19606,7 @@ function () {
 
 var _default = Wind;
 exports.default = _default;
-},{"./canvas":"src/canvas.js"}],"src/World.js":[function(require,module,exports) {
+},{"./canvas":"src/canvas.js","./utils":"src/utils.js"}],"src/World.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19673,16 +19694,16 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 (0, _canvas.init)();
 var world = new _World.default();
-window.addEventListener('mousedown', function (e) {
+window.addEventListener("mousedown", function (e) {
   world.wind.from = {
     x: e.clientX,
     y: e.clientY
   };
-  window.addEventListener('mousemove', inputMove, false);
+  window.addEventListener("mousemove", inputMove, false);
 });
-window.addEventListener('mouseup', function (e) {
+window.addEventListener("mouseup", function (e) {
   world.wind.release();
-  window.removeEventListener('mousemove', inputMove, false);
+  window.removeEventListener("mousemove", inputMove, false);
 });
 
 var inputMove = function inputMove(e) {
@@ -19702,7 +19723,7 @@ var animate = function animate() {
 };
 
 animate();
-},{"lodash":"node_modules/lodash/lodash.js","./canvas":"src/canvas.js","./World":"src/World.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"lodash":"node_modules/lodash/lodash.js","./canvas":"src/canvas.js","./World":"src/World.js"}],"node_modules/parcel-bundler/lib/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -19729,7 +19750,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58025" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "53178" + '/');
 
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
@@ -19871,5 +19892,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},["node_modules/parcel-bundler/src/builtins/hmr-runtime.js","src/main.js"], null)
+},{}]},{},["node_modules/parcel-bundler/lib/builtins/hmr-runtime.js","src/main.js"], null)
 //# sourceMappingURL=/main.1e43358e.map

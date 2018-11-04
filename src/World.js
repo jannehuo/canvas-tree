@@ -1,6 +1,6 @@
-import Tree from './Tree';
-import Wind from './Wind';
-import {screen} from './canvas';
+import Tree from "./Tree";
+import Wind from "./Wind";
+import { screen } from "./canvas";
 
 const treeSizes = {
   large: 700,
@@ -16,10 +16,10 @@ const radiusSizes = {
 
 const treeSize = {};
 
-if(screen.w > 1024) {
+if (screen.w > 1024) {
   treeSize.radius = radiusSizes.large;
   treeSize.size = treeSizes.large;
-} else if(screen.w > 768 && screen.w < 1024) {
+} else if (screen.w > 768 && screen.w < 1024) {
   treeSize.radius = radiusSizes.medium;
   treeSize.size = treeSizes.medium;
 } else {
